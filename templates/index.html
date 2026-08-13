@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Material Bin Recommendation System</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="wrap header-inner">
+    <div class="brand">
+      <span class="brand-mark">BIN</span>
+      <div>
+        <h1>Material Bin Recommendation System</h1>
+        <p>Excel driven storage analysis &middot; demand volume &amp; demand weight based bin selection</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="btn-sample" class="btn btn-ghost" type="button">Load sample workbook</button>
+      <button id="btn-download" class="btn btn-primary" type="button" disabled>Download result</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- Upload ------------------------------------------------------------ -->
+  <section class="card" id="upload-card">
+    <div class="card-head">
+      <h2>1. Upload workbook</h2>
+      <span class="muted">.xlsx or .xlsm up to {{ max_upload_mb }} MB</span>
+    </div>
+    <div class="card-body">
+      <div id="dropzone" class="dropzone" tabindex="0" role="button"
+           aria-label="Choose an Excel workbook to analyse">
+        <svg viewBox="0 0 24 24" class="drop-icon" aria-hidden="true">
+          <path d="M12 16V4m0 0L8 8m4-4 4 4M4 17v1a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3v-1"/>
+        </svg>
+        <p class="drop-title">Drag an Excel file here, or <span class="link">browse</span></p>
+        <p class="drop-hint">
+          An <strong>Input</strong> sheet carrying <strong>Demand product volume (mm^3)</strong> and
+          <strong>demand product weights (Kg)</strong> is matched against the bin rule master below.
+          A <strong>Part Requirements</strong> + <strong>Master</strong> workbook still works as before.
+        </p>
+        <input type="file" id="file-input" accept=".xlsx,.xlsm" hidden>
+      </div>
+      <div id="file-chip" class="file-chip" hidden>
+        <span id="file-name"></span>
+        <button type="button" id="btn-clear" class="chip-clear" aria-label="Clear file">&times;</button>
+      </div>
+    </div>
+  </section>
+
+  <div id="alert" class="alert" hidden></div>
+
+  <div id="loading" class="loading" hidden>
+    <span class="spinner"></span> Analysing workbook&hellip;
+  </div>
+
+  <!-- Results ----------------------------------------------------------- -->
+  <div id="results" hidden>
+
+    <!-- Summary metrics -->
+    <section class="metrics" id="metrics"></section>
+
+    <!-- Bin rule master (Input sheet mode) -->
+    <section class="card" id="rules-card" hidden>
+      <div class="card-head">
+        <h2>Bin Recommendation Rules</h2>
+        <span class="muted">A category applies only when the demand volume <strong>and</strong>
+          the demand weight are both inside its range</span>
+      </div>
+      <div class="card-body">
+        <div class="table-scroll">
+          <table class="data-table" id="rules-table">
+            <thead>
+              <tr>
+                <th>Bin Type</th>
+                <th class="num">Maximum Volume (mm&sup3;)</th>
+                <th class="num">Minimum Weight (Kg)</th>
+                <th class="num">Maximum Weight (Kg)</th>
+                <th class="num">Priority</th>
+                <th class="num">Products Assigned</th>
+              </tr>
+            </thead>
+            <tbody id="rules-body"></tbody>
+          </table>
+        </div>
+        <p class="muted rule-note">
+          Bounds are inclusive at both ends. Where two weight bands meet (10, 15, 25, 40 Kg)
+          more than one category can qualify; the smallest suitable category wins and
+          <strong>Priority</strong> breaks any remaining tie, so the result is always deterministic.
+        </p>
+      </div>
+    </section>
+
+    <!-- Tabs -->
+    <section class="card">
+      <div class="tabs" role="tablist">
+        <button class="tab is-active" data-tab="parts" role="tab">Materials &amp; recommendations</button>
+        <button class="tab" data-tab="bins" role="tab" id="tab-bins">Master bins <span class="pill" id="tab-bins-count"></span></button>
+        <button class="tab" data-tab="issues" role="tab">Validation <span class="pill" id="tab-issues-count"></span></button>
+        <button class="tab" data-tab="guide" role="tab" id="tab-guide">Logic guide</button>
+      </div>
+
+      <!-- Materials -->
+      <div class="tab-panel is-active" data-panel="parts">
+        <div class="toolbar">
+          <input type="search" id="search" class="input" placeholder="Search part number, description or bin">
+          <select id="filter-bin" class="input input-select" hidden>
+            <option value="all">All bin types</option>
+          </select>
+          <select id="filter-status" class="input input-select"></select>
+          <select id="page-size" class="input input-select">
+            <option value="25">25 per page</option>
+            <option value="50">50 per page</option>
+            <option value="100">100 per page</option>
+            <option value="0">Show all</option>
+          </select>
+          <span class="toolbar-count muted" id="row-count"></span>
+        </div>
+
+        <div class="table-scroll">
+          <table class="data-table" id="parts-table">
+            <thead id="parts-head"></thead>
+            <tbody id="parts-body"></tbody>
+          </table>
+        </div>
+        <div class="pager" id="pager"></div>
+      </div>
+
+      <!-- Bins -->
+      <div class="tab-panel" data-panel="bins">
+        <div class="table-scroll">
+          <table class="data-table" id="bins-table">
+            <thead>
+              <tr>
+                <th>Bin ID</th>
+                <th>Description</th>
+                <th class="num">L &times; B &times; W (mm)</th>
+                <th class="num">Cubic Capacity (mm&sup3;)</th>
+                <th class="num">Max Weight (kg)</th>
+                <th>Location</th>
+                <th>Status</th>
+                <th class="num">Parts Assigned</th>
+              </tr>
+            </thead>
+            <tbody id="bins-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Issues -->
+      <div class="tab-panel" data-panel="issues">
+        <div class="table-scroll">
+          <table class="data-table" id="issues-table">
+            <thead>
+              <tr>
+                <th>Severity</th>
+                <th>Sheet</th>
+                <th class="num">Row</th>
+                <th>Reference</th>
+                <th>Message</th>
+              </tr>
+            </thead>
+            <tbody id="issues-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Guide -->
+      <div class="tab-panel" data-panel="guide">
+        <div class="table-scroll">
+          <table class="data-table" id="guide-table">
+            <thead id="guide-head"></thead>
+            <tbody id="guide-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="app-footer">
+  <div class="wrap">
+    <span id="engine-formula">Volume Utilization % = Demand Volume &divide; Bin Max Volume
+      &nbsp;&middot;&nbsp; Weight Utilization % = Demand Weight &divide; Bin Max Weight</span>
+    <span id="engine-settings" class="muted"></span>
+  </div>
+</footer>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

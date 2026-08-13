@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Generated result workbooks
+*_Recommendations_*.xlsx
+~$*.xlsx
+
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
