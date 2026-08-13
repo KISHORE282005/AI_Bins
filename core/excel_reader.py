@@ -9,7 +9,8 @@ Two workbook layouts are recognised, and the sheets present decide which:
 
     Input             a flat sheet of materials that already carries the demand
                       volume and demand weight, matched against the bin rule
-                      master in config.BIN_RULES
+                      master in the persistent rule store (seeded from
+                      config.BIN_RULES)
     Part Requirements + Master
                       materials sized from ROP and matched against a bin list
                       supplied in the workbook

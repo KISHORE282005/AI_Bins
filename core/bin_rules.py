@@ -11,8 +11,10 @@ category, a utilisation figure and a sentence explaining itself.
     decision.recommended_bin     # "M PLASTIC"
     decision.status              # "Matched"
 
-The rule table lives in ``config.BIN_RULES``; no threshold is written down
-anywhere else.  To retune the plant's bins, edit that table only.
+The rule table ships in ``config.BIN_RULES``, which seeds the persistent
+``data/bin_rules.json`` store on first use.  ``get_rules()`` reads the store so
+edits made through the UI's rule CRUD are picked up immediately; no threshold
+is written down anywhere else.
 
 Rules
     * Both conditions must hold.  A demand inside a category's volume band but
@@ -96,13 +98,27 @@ def load_rules(raw: Optional[Iterable[Mapping[str, Any]]] = None) -> List[BinRul
     return rules
 
 
-# Loaded once; callers that want a different table pass rules= explicitly.
+# Loaded from config.BIN_RULES at import time.  It is the fallback table until
+# the persistent rule store exists; callers that want the current (possibly
+# edited) master should use get_rules() or pass rules= explicitly.
 RULES: List[BinRule] = load_rules()
+
+
+def get_rules() -> List[BinRule]:
+    """The current rule master from the persistent rule store.
+
+    The store is seeded from ``config.BIN_RULES`` on first use, so on a fresh
+    install this is identical to ``RULES``; any edits made through the UI (or
+    directly to the store) are reflected here immediately.
+    """
+    from core import rules_store
+
+    return load_rules(rules_store.list_rules())
 
 
 def rule_table() -> List[dict]:
     """The rule master as plain dictionaries, for the UI and the workbook."""
-    return [rule.as_dict() for rule in RULES]
+    return [rule.as_dict() for rule in get_rules()]
 
 
 # ---------------------------------------------------------------------------
@@ -295,7 +311,7 @@ def recommend_bin(
     Returns a BinDecision whose status is "Matched", "No Suitable Bin" or
     "Invalid Data".  There is no fallback category.
     """
-    rules = RULES if rules is None else rules
+    rules = get_rules() if rules is None else rules
     volume, weight, problems = validate_demand(demand_volume, demand_weight)
 
     if problems:
@@ -448,7 +464,8 @@ def build_summary(results: Sequence, issues: Sequence = ()) -> dict:
     total_volume = sum(float(r.decision.demand_volume or 0.0) for r in results)
     total_weight = sum(float(r.decision.demand_weight or 0.0) for r in results)
 
-    bin_load: Dict[str, int] = {rule.name: 0 for rule in RULES}
+    current = get_rules()
+    bin_load: Dict[str, int] = {rule.name: 0 for rule in current}
     for r in matched:
         bin_load[r.decision.recommended_bin] = bin_load.get(r.decision.recommended_bin, 0) + 1
 
@@ -468,7 +485,7 @@ def build_summary(results: Sequence, issues: Sequence = ()) -> dict:
         "average_volume_utilisation_pct": (sum(volume_utils) / len(volume_utils)) if volume_utils else None,
         "average_weight_utilisation_pct": (sum(weight_utils) / len(weight_utils)) if weight_utils else None,
         "bin_load": bin_load,
-        "rule_count": len(RULES),
+        "rule_count": len(current),
         "issue_count": len(issues),
         "error_issue_count": sum(1 for i in issues if getattr(i, "severity", "") == "error"),
         "volume_unit": VOLUME_UNIT,

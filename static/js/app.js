@@ -30,7 +30,8 @@
     page: 1,
     pageSize: 25,
     sortKey: null,
-    sortDir: 1
+    sortDir: 1,
+    rulesHidden: false
   };
 
   var el = function (id) { return document.getElementById(id); };
@@ -324,13 +325,34 @@
 
   // ---------------------------------------------------------- rule master
 
+  function dropdownHtml(rule) {
+    var isFirst = rule.priority === 0;
+    var isLast = rule.priority === state.rules.length - 1;
+    return '<div class="dropdown">' +
+      '<button type="button" class="btn-icon" data-menu-trigger ' +
+      'aria-label="Actions for ' + esc(rule.name) + '" title="Actions">&vellip;</button>' +
+      '<div class="dropdown-menu" hidden>' +
+      '<button type="button" data-rule-action="edit">Edit</button>' +
+      '<button type="button" data-rule-action="move-up"' + (isFirst ? " disabled" : "") +
+      '>Move up</button>' +
+      '<button type="button" data-rule-action="move-down"' + (isLast ? " disabled" : "") +
+      '>Move down</button>' +
+      '<button type="button" data-rule-action="delete" class="danger">Delete</button>' +
+      "</div></div>";
+  }
+
   function renderRules() {
     var card = el("rules-card");
-    if (state.mode !== "input" || !state.rules.length) {
+    if (state.mode !== "input") {
       card.hidden = true;
       return;
     }
     card.hidden = false;
+
+    el("rules-card-body").hidden = state.rulesHidden;
+    el("rules-toggle-label").textContent = state.rulesHidden
+      ? "Show bin recommendations"
+      : "Hide bin recommendations";
 
     var load = (state.summary && state.summary.bin_load) || {};
     el("rules-body").innerHTML = state.rules.map(function (rule) {
@@ -341,8 +363,127 @@
         '<td class="num mono">' + num(rule.min_weight, 2) + "</td>" +
         '<td class="num mono">' + num(rule.max_weight, 2) + "</td>" +
         '<td class="num mono">' + (rule.priority + 1) + "</td>" +
-        '<td class="num mono' + (used ? " strong" : " muted") + '">' + used + "</td></tr>";
+        '<td class="num mono' + (used ? " strong" : " muted") + '">' + used + "</td>" +
+        '<td class="rule-actions">' + dropdownHtml(rule) + "</td></tr>";
     }).join("");
+  }
+
+  // ------------------------------------------------------- rule CRUD api
+
+  function ruleApi(url, options) {
+    return fetch(url, options)
+      .then(function (response) { return response.json(); })
+      .then(function (data) {
+        if (!data.ok) throw new Error(data.error || "Rule request failed.");
+        return data;
+      });
+  }
+
+  function loadRules() {
+    return ruleApi("/api/rules")
+      .then(function (data) {
+        state.rules = data.rules || [];
+        renderRules();
+        renderToolbar();
+      })
+      .catch(function (error) {
+        showAlert("error", "<strong>Could not load bin rules.</strong> " + esc(error.message));
+      });
+  }
+
+  function refreshRules(message) {
+    return loadRules().then(function () {
+      if (message) showAlert("success", "<strong>" + message + "</strong>");
+    });
+  }
+
+  // Re-run the last analysed workbook so the recommendations react
+  // immediately to any rule change, without re-uploading the file.
+  function autoReanalyse() {
+    var results = el("results");
+    if (results && !results.hidden) postAnalysis("/api/reanalyse", null);
+  }
+
+  function closeDropdowns() {
+    Array.prototype.forEach.call(document.querySelectorAll(".dropdown-menu"), function (menu) {
+      menu.hidden = true;
+    });
+  }
+
+  function openRuleModal(rule) {
+    el("rule-modal-title").textContent = rule ? "Edit bin rule" : "Add bin rule";
+    el("rule-id").value = rule ? rule.id : "";
+    el("rule-name").value = rule ? rule.name : "";
+    el("rule-min-volume").value = rule ? rule.min_volume : "";
+    el("rule-max-volume").value = rule ? rule.max_volume : "";
+    el("rule-min-weight").value = rule ? rule.min_weight : "";
+    el("rule-max-weight").value = rule ? rule.max_weight : "";
+    el("rule-form-error").hidden = true;
+    el("rule-modal").hidden = false;
+    el("rule-name").focus();
+  }
+
+  function closeRuleModal() { el("rule-modal").hidden = true; }
+
+  function saveRule() {
+    var id = el("rule-id").value;
+    var payload = {
+      name: el("rule-name").value.trim(),
+      min_volume: el("rule-min-volume").value,
+      max_volume: el("rule-max-volume").value,
+      min_weight: el("rule-min-weight").value,
+      max_weight: el("rule-max-weight").value
+    };
+    var url = id ? "/api/rules/" + encodeURIComponent(id) : "/api/rules";
+    var options = {
+      method: id ? "PUT" : "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    };
+
+    ruleApi(url, options)
+      .then(function () {
+        closeRuleModal();
+        return refreshRules(id ? "Bin rule updated." : "Bin rule added.");
+      })
+      .then(autoReanalyse)
+      .catch(function (error) {
+        var box = el("rule-form-error");
+        box.textContent = error.message;
+        box.hidden = false;
+      });
+  }
+
+  function deleteRule(rule) {
+    if (!confirm('Delete bin rule "' + rule.name + '"?')) return;
+    ruleApi("/api/rules/" + encodeURIComponent(rule.id), { method: "DELETE" })
+      .then(function () {
+        return refreshRules('Bin rule "' + rule.name + '" deleted.');
+      })
+      .then(autoReanalyse)
+      .catch(function (error) {
+        showAlert("error", "<strong>Could not delete rule.</strong> " + esc(error.message));
+      });
+  }
+
+  function moveRule(rule, delta) {
+    var ids = state.rules.map(function (r) { return r.id; });
+    var index = ids.indexOf(rule.id);
+    var swap = index + delta;
+    if (swap < 0 || swap >= ids.length) return;
+    ids[index] = ids[swap];
+    ids[swap] = rule.id;
+
+    ruleApi("/api/rules/reorder", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: ids })
+    })
+      .then(function () { return refreshRules("Rule order updated."); })
+      .then(autoReanalyse)
+      .catch(function (error) {
+        showAlert("error", "<strong>Could not reorder rules.</strong> " + esc(error.message));
+      });
   }
 
   // --------------------------------------------------------------- filter
@@ -620,13 +761,18 @@
     state.mode = data.mode === "input" ? "input" : "master";
     state.rows = data.rows || [];
     state.bins = data.bins || [];
-    state.rules = data.rules || [];
     state.issues = data.issues || [];
     state.guide = data.guide || [];
     state.summary = data.summary;
     state.download = data.download;
     state.sortKey = null;
     state.sortDir = 1;
+    state.rulesHidden = false;
+
+    /* Rules come from the persistent store so every edit is reflected even
+       before the workbook is re-analysed; the payload copy is only a fallback
+       while the fetch completes. */
+    state.rules = data.rules || [];
 
     renderMetrics();
     renderRules();
@@ -645,6 +791,14 @@
 
     renderFooter(data);
     renderSummaryAlert();
+
+    if (state.mode === "input") loadRules();
+
+    // Keep the results on screen so the user always sees them straight away.
+    var res = el("results");
+    if (res && res.getBoundingClientRect().bottom > window.innerHeight) {
+      res.scrollIntoView({ block: "start" });
+    }
   }
 
   // -------------------------------------------------------------- network
@@ -663,7 +817,8 @@
         setLoading(false);
         if (!result.ok || !result.data.ok) {
           showAlert("error", "<strong>Could not analyse the workbook.</strong> " +
-            esc(result.data.error || "Unknown error."));
+            esc(result.data.error || "Unknown error.") +
+            " <span class='alert-hint'>The file needs an \"Input\" sheet carrying the demand volume and weight, or a \"Part Requirements\" sheet with a \"Master\" bin sheet.</span>");
           return;
         }
         renderAll(result.data);
@@ -789,6 +944,93 @@
       tab.addEventListener("click", function () {
         selectTab(tab.getAttribute("data-tab"));
       });
+    });
+
+    // ---------------------------------------------------- rule CRUD events
+
+    /* Dropping or browsing any Excel anywhere on the page starts the analysis
+       immediately - no extra button is needed. */
+    document.addEventListener("dragover", function (e) { e.preventDefault(); });
+
+    document.addEventListener("drop", function (e) {
+      e.preventDefault();
+      var file = e.dataTransfer.files && e.dataTransfer.files[0];
+      if (file) analyseFile(file);
+    });
+
+    el("rule-modal-close").addEventListener("click", closeRuleModal);
+    el("rule-form-cancel").addEventListener("click", closeRuleModal);
+
+    el("rule-form").addEventListener("submit", function (e) {
+      e.preventDefault();
+      saveRule();
+    });
+
+    el("rule-modal").addEventListener("click", function (e) {
+      if (e.target === this) closeRuleModal();
+    });
+
+    /* The dropdown menus and their actions are delegated to the document so
+       rows rebuilt by renderRules() keep working without re-binding. */
+    document.addEventListener("click", function (e) {
+      var trigger = e.target.closest("[data-menu-trigger]");
+      if (trigger) {
+        e.stopPropagation();
+        var menu = trigger.closest(".dropdown").querySelector(".dropdown-menu");
+        var opening = menu.hidden;
+        closeDropdowns();
+        if (!opening) return;
+
+        // Positioned against the viewport (fixed) so a small table cannot clip
+        // the menu; flip it upward when it would run off the bottom edge.
+        menu.hidden = false;
+        var rect = trigger.getBoundingClientRect();
+        var width = menu.offsetWidth;
+        var height = menu.offsetHeight;
+        menu.style.left = Math.max(8, Math.min(rect.right - width, window.innerWidth - width - 8)) + "px";
+        var top = rect.bottom + 4;
+        if (top + height > window.innerHeight - 8) top = rect.top - height - 4;
+        menu.style.top = Math.max(8, top) + "px";
+        return;
+      }
+
+      var action = e.target.closest("[data-rule-action]");
+      if (action) {
+        e.stopPropagation();
+        var row = action.closest("tr");
+        var index = Array.prototype.indexOf.call(el("rules-body").children, row);
+        var rule = state.rules[index];
+        var kind = action.getAttribute("data-rule-action");
+        closeDropdowns();
+        if (kind === "edit") openRuleModal(rule);
+        else if (kind === "delete") deleteRule(rule);
+        else if (kind === "move-up") moveRule(rule, -1);
+        else if (kind === "move-down") moveRule(rule, 1);
+        return;
+      }
+
+      var headerAction = e.target.closest("[data-rules-action]");
+      if (headerAction) {
+        e.stopPropagation();
+        closeDropdowns();
+        var headerKind = headerAction.getAttribute("data-rules-action");
+        if (headerKind === "add") openRuleModal(null);
+        else if (headerKind === "rerun") postAnalysis("/api/reanalyse", null);
+        else if (headerKind === "toggle") {
+          state.rulesHidden = !state.rulesHidden;
+          renderRules();
+        }
+        return;
+      }
+
+      closeDropdowns();
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") {
+        closeRuleModal();
+        closeDropdowns();
+      }
     });
   }
 

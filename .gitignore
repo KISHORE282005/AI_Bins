@@ -9,6 +9,9 @@ env/
 *_Recommendations_*.xlsx
 ~$*.xlsx
 
+# Runtime-edited bin rule master
+data/bin_rules.json
+
 .vscode/
 .idea/
 .DS_Store

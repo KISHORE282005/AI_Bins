@@ -152,8 +152,11 @@ REQUIRED_INPUT_FIELDS = ("demand_volume", "demand_weight")
 # eligible, so declaration order below is the deterministic priority used to
 # break ties - never a random or first-found choice.
 #
-# Add, remove or retune a category here; the engine reads this table and no
-# threshold is repeated anywhere else in the code.
+# Add, remove or retune a category here; the engine reads this table.  The
+# runtime bin rule store (data/bin_rules.json) is seeded from this list the
+# first time it is used, and the UI's Bin Recommendation Rules CRUD then edits
+# that store, so this file is only the shipped default.  No threshold is
+# repeated anywhere else in the code.
 # --------------------------------------------------------------------------
 BIN_RULES = [
     {"name": "MS PLASTIC",    "min_volume": 0, "max_volume": 3_696_000,   "min_weight": 0,  "max_weight": 10},

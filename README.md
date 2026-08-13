@@ -104,7 +104,13 @@ documentation, not input to the calculation.
 
 ## Bin rule master (Input sheet mode)
 
-The six categories live in `config.BIN_RULES` and nowhere else:
+The six shipped categories are seeded from `config.BIN_RULES` into
+`data/bin_rules.json` on first use, and the **Bin Recommendation Rules** card in
+the UI edits that store (add / edit / delete / reorder via each row's action
+dropdown). The engine always matches against the store, so changes apply on the
+next analysis - use **Re-run analysis** to apply them to the current workbook
+without re-uploading. Reset by deleting `data/bin_rules.json`; it re-seeds from
+the config defaults.
 
 | Bin Type      | Maximum Volume (mm³) | Minimum Weight (Kg) | Maximum Weight (Kg) | Priority |
 | ------------- | ---------------------: | --------------------: | --------------------: | :--------: |

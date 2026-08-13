@@ -6,6 +6,15 @@ Routes
     POST /api/sample           run the pipeline on the bundled sample workbook
     GET  /api/download/<id>    download the generated result workbook
     GET  /api/health           liveness probe
+
+Bin rule master CRUD (Input-sheet mode)
+    GET    /api/rules          list the current rules
+    POST   /api/rules          add a rule
+    PUT    /api/rules/<id>     update a rule
+    DELETE /api/rules/<id>     remove a rule
+    POST   /api/rules/reorder  reorder rules (declaration order = priority)
+    POST   /api/reanalyse      re-run the last uploaded workbook with the
+                               current rules, no re-upload needed
 """
 
 from __future__ import annotations
@@ -15,13 +24,13 @@ import threading
 import time
 import uuid
 from io import BytesIO
-from typing import Dict, Tuple
+from typing import Dict, Optional, Tuple
 
 from flask import Flask, jsonify, render_template, request, send_file
 from werkzeug.utils import secure_filename
 
 import config
-from core import excel_writer
+from core import excel_writer, rules_store
 from core.models import MODE_INPUT
 from core.pipeline import WorkbookError, analyse_workbook
 
@@ -33,6 +42,11 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 # Generated workbooks held in memory until downloaded or evicted.
 _downloads: Dict[str, Tuple[str, bytes, float]] = {}
 _downloads_lock = threading.Lock()
+
+# The most recently analysed workbook, so "Re-run analysis" can re-apply the
+# current bin rules without forcing the user to upload the file again.
+_last_run: Optional[Tuple[str, bytes, float]] = None
+_last_run_lock = threading.Lock()
 
 
 def _store_download(filename: str, payload: bytes) -> str:
@@ -60,7 +74,13 @@ def _run_analysis(stream, source_name: str):
     The response carries `mode` so the UI knows whether it is showing the bin
     rule master (Input sheet) or a workbook-supplied bin list.
     """
-    result = analyse_workbook(stream, source_name=source_name)
+    global _last_run
+
+    raw = stream.read()
+    with _last_run_lock:
+        _last_run = (source_name, raw, time.time())
+
+    result = analyse_workbook(BytesIO(raw), source_name=source_name)
 
     payload = excel_writer.build_workbook(result)
     filename = excel_writer.output_filename(source_name)
@@ -175,6 +195,73 @@ def download(token: str):
         as_attachment=True,
         download_name=filename,
     )
+
+
+# ---------------------------------------------------------------------------
+# Bin rule master CRUD
+# ---------------------------------------------------------------------------
+
+def _rules_error(exc: Exception) -> Tuple[object, int]:
+    return jsonify({"ok": False, "error": str(exc)}), 400
+
+
+@app.route("/api/rules", methods=["GET"])
+def api_rules_list():
+    return jsonify({"ok": True, "rules": rules_store.list_rules()})
+
+
+@app.route("/api/rules", methods=["POST"])
+def api_rules_create():
+    payload = request.get_json(silent=True) or {}
+    try:
+        rule = rules_store.create_rule(payload)
+    except ValueError as exc:
+        return _rules_error(exc)
+    return jsonify({"ok": True, "rule": rule})
+
+
+@app.route("/api/rules/<rule_id>", methods=["PUT"])
+def api_rules_update(rule_id: str):
+    payload = request.get_json(silent=True) or {}
+    try:
+        rule = rules_store.update_rule(rule_id, payload)
+    except ValueError as exc:
+        return _rules_error(exc)
+    return jsonify({"ok": True, "rule": rule})
+
+
+@app.route("/api/rules/<rule_id>", methods=["DELETE"])
+def api_rules_delete(rule_id: str):
+    try:
+        rules_store.delete_rule(rule_id)
+    except ValueError as exc:
+        return _rules_error(exc)
+    return jsonify({"ok": True, "deleted": rule_id})
+
+
+@app.route("/api/rules/reorder", methods=["POST"])
+def api_rules_reorder():
+    payload = request.get_json(silent=True) or {}
+    try:
+        rules = rules_store.reorder_rules(payload.get("ids") or [])
+    except ValueError as exc:
+        return _rules_error(exc)
+    return jsonify({"ok": True, "rules": rules})
+
+
+@app.route("/api/reanalyse", methods=["POST"])
+def reanalyse():
+    """Re-run the last analysed workbook against the current rule master."""
+    with _last_run_lock:
+        entry = _last_run
+    if entry is None:
+        return jsonify({"ok": False, "error": "No workbook has been analysed yet."}), 400
+
+    name, raw, _ = entry
+    try:
+        return _run_analysis(BytesIO(raw), name)
+    except WorkbookError as exc:
+        return jsonify({"ok": False, "error": str(exc)}), 422
 
 
 @app.errorhandler(413)

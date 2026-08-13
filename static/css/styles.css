@@ -67,8 +67,8 @@ body {
   align-items: center;
   justify-content: space-between;
   gap: 24px;
-  padding-top: 16px;
-  padding-bottom: 16px;
+  padding-top: 9px;
+  padding-bottom: 9px;
   flex-wrap: wrap;
 }
 
@@ -81,19 +81,19 @@ body {
 .brand-mark {
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
+  width: 36px;
+  height: 36px;
   border-radius: var(--radius);
   background: rgba(255, 255, 255, .12);
   border: 1px solid rgba(255, 255, 255, .22);
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px;
   letter-spacing: .5px;
 }
 
 .app-header h1 {
   margin: 0;
-  font-size: 18px;
+  font-size: 15px;
   font-weight: 600;
   letter-spacing: .2px;
 }
@@ -147,6 +147,164 @@ body {
 .btn-sm:not(:disabled):hover { border-color: var(--accent); color: var(--accent); }
 .btn-sm.is-active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
+.btn-primary.btn-sm {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.btn-primary.btn-sm:not(:disabled):hover { background: #1d4fd8; }
+
+.btn-dropdown {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-dropdown .caret {
+  font-size: 10px;
+  line-height: 1;
+  opacity: .8;
+}
+
+/* ---------------------------------------------------- rule action dropdown */
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.rule-desc {
+  margin: 0 0 8px;
+  font-size: 12.5px;
+  line-height: 1.5;
+}
+
+.btn-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  color: var(--ink-2);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+
+.rule-actions { width: 1%; white-space: nowrap; }
+
+.dropdown { position: relative; display: inline-block; }
+
+.dropdown-menu {
+  position: fixed;
+  z-index: 30;
+  min-width: 152px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 6px 18px rgba(20, 32, 46, .14);
+  padding: 4px;
+}
+
+.dropdown-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: none;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--ink);
+}
+.dropdown-menu button:hover { background: var(--accent-soft); color: var(--accent); }
+.dropdown-menu button:disabled { opacity: .45; cursor: not-allowed; }
+.dropdown-menu button.danger { color: var(--bad); }
+.dropdown-menu button.danger:hover { background: var(--bad-soft); }
+
+/* ---------------------------------------------------------- rule editor */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(20, 32, 46, .45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal {
+  width: 100%;
+  max-width: 560px;
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: 0 12px 40px rgba(20, 32, 46, .28);
+  overflow: hidden;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.modal-head h2 { margin: 0; font-size: 15px; font-weight: 600; }
+
+.rule-form { padding: 18px; }
+
+.rule-form label {
+  display: block;
+  margin-bottom: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.rule-form input {
+  display: block;
+  width: 100%;
+  margin-top: 5px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 8px 11px;
+  font: inherit;
+  font-size: 13.5px;
+  color: var(--ink);
+}
+.rule-form input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, .12);
+}
+
+.rule-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.form-error {
+  color: var(--bad);
+  font-size: 12.5px;
+  margin: 0 0 12px;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 6px;
+}
+
 /* ----------------------------------------------------------------- cards */
 
 .card {
@@ -154,7 +312,7 @@ body {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  margin: 20px 0;
+  margin: 10px 0;
   overflow: hidden;
 }
 
@@ -163,17 +321,17 @@ body {
   align-items: baseline;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 18px;
+  padding: 9px 14px;
   border-bottom: 1px solid var(--line-soft);
 }
 
 .card-head h2 {
   margin: 0;
-  font-size: 14.5px;
+  font-size: 13.5px;
   font-weight: 600;
 }
 
-.card-body { padding: 18px; }
+.card-body { padding: 10px 14px; }
 
 /* -------------------------------------------------------------- dropzone */
 
@@ -181,7 +339,7 @@ body {
   border: 2px dashed var(--line);
   border-radius: var(--radius);
   background: #fbfcfe;
-  padding: 34px 20px;
+  padding: 16px 20px;
   text-align: center;
   cursor: pointer;
   transition: border-color .15s, background .15s;
@@ -196,8 +354,8 @@ body {
 }
 
 .drop-icon {
-  width: 34px;
-  height: 34px;
+  width: 26px;
+  height: 26px;
   fill: none;
   stroke: var(--accent);
   stroke-width: 1.7;
@@ -206,8 +364,8 @@ body {
 }
 
 .drop-title {
-  margin: 10px 0 4px;
-  font-size: 15px;
+  margin: 6px 0 2px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -223,8 +381,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  margin-top: 14px;
-  padding: 7px 12px;
+  margin-top: 8px;
+  padding: 4px 11px;
   background: var(--accent-soft);
   border: 1px solid #cfdcfb;
   border-radius: 999px;
@@ -246,22 +404,24 @@ body {
 /* ------------------------------------------------------- alert & loading */
 
 .alert {
-  margin: 16px 0;
-  padding: 12px 16px;
+  margin: 8px 0;
+  padding: 10px 14px;
   border-radius: var(--radius);
   border: 1px solid;
-  font-size: 13.5px;
+  font-size: 13px;
 }
 .alert.error   { background: var(--bad-soft);  border-color: #f3c4bf; color: #8f2a1e; }
 .alert.warning { background: var(--warn-soft); border-color: #f3ddb4; color: #7c4a09; }
 .alert.success { background: var(--ok-soft);   border-color: #bfe3cd; color: #145c2e; }
 
+.alert .alert-hint { display: block; margin-top: 4px; font-size: 12px; opacity: .85; }
+
 .loading {
   display: flex;
   align-items: center;
   gap: 10px;
-  margin: 16px 0;
-  padding: 14px 16px;
+  margin: 8px 0;
+  padding: 10px 14px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -285,8 +445,8 @@ body {
 .metrics {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-  gap: 14px;
-  margin: 20px 0;
+  gap: 10px;
+  margin: 10px 0;
 }
 
 .metric {
@@ -295,7 +455,7 @@ body {
   border-left: 3px solid var(--navy);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 14px 16px;
+  padding: 9px 12px;
 }
 
 .metric.is-ok   { border-left-color: var(--ok); }
@@ -311,8 +471,8 @@ body {
 }
 
 .metric-value {
-  margin-top: 6px;
-  font-size: 23px;
+  margin-top: 3px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1.15;
   color: var(--ink);
@@ -329,7 +489,7 @@ body {
 .tabs {
   display: flex;
   gap: 4px;
-  padding: 0 12px;
+  padding: 0 10px;
   border-bottom: 1px solid var(--line);
   background: #fafbfd;
   overflow-x: auto;
@@ -338,9 +498,9 @@ body {
 .tab {
   border: 0;
   background: none;
-  padding: 13px 14px;
+  padding: 8px 12px;
   font: inherit;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--muted);
   cursor: pointer;
@@ -377,7 +537,7 @@ body {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 14px 18px;
+  padding: 8px 14px;
   border-bottom: 1px solid var(--line-soft);
   flex-wrap: wrap;
 }
@@ -407,7 +567,7 @@ body {
 
 .table-scroll {
   overflow-x: auto;
-  max-height: 68vh;
+  max-height: calc(100vh - 340px);
   overflow-y: auto;
 }
 
@@ -425,10 +585,10 @@ body {
   background: var(--navy);
   color: #fff;
   font-weight: 600;
-  font-size: 12px;
+  font-size: 11.5px;
   letter-spacing: .3px;
   text-align: left;
-  padding: 10px 12px;
+  padding: 7px 10px;
   white-space: nowrap;
   border-bottom: 1px solid var(--navy-dark);
 }
@@ -442,7 +602,7 @@ body {
 .data-table th.sort-desc::after { content: " \2193"; opacity: 1; }
 
 .data-table tbody td {
-  padding: 9px 12px;
+  padding: 6px 10px;
   border-bottom: 1px solid var(--line-soft);
   vertical-align: top;
 }
@@ -487,13 +647,13 @@ body {
 
 /* Footnote under the bin rule master table. */
 .rule-note {
-  margin: 12px 0 0;
+  margin: 8px 0 0;
   font-size: 12.5px;
   line-height: 1.5;
 }
 
 .empty-row td {
-  padding: 34px 12px;
+  padding: 20px 12px;
   text-align: center;
   color: var(--muted);
   font-style: italic;
@@ -570,7 +730,7 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 12px 18px;
+  padding: 8px 14px;
   border-top: 1px solid var(--line-soft);
   flex-wrap: wrap;
 }
@@ -580,8 +740,8 @@ body {
 /* ---------------------------------------------------------------- footer */
 
 .app-footer {
-  margin-top: 32px;
-  padding: 16px 0 28px;
+  margin-top: 10px;
+  padding: 8px 0 10px;
   border-top: 1px solid var(--line);
   background: var(--surface);
   font-size: 12.5px;
@@ -602,4 +762,5 @@ body {
   .app-header h1 { font-size: 16px; }
   .toolbar-count { margin-left: 0; width: 100%; }
   .reason-col { min-width: 260px; }
+  .rule-grid { grid-template-columns: 1fr; }
 }

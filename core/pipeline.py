@@ -44,11 +44,14 @@ def _analyse_input(contents: WorkbookContents, source_name: str) -> AnalysisResu
     # The rule engine is asked about the raw cells so it does its own strict
     # numeric check; a row already flagged by the validator comes back as
     # "Invalid Data" from the same code path, never as a silent fallback bin.
+    # The current rule master is fetched once per run so a mid-run edit to the
+    # rule store cannot produce a mixed recommendation pass.
+    rules = bin_rules.get_rules()
     results = [
         MaterialRecommendation(
             material=material,
             decision=bin_rules.recommend_bin(
-                material.raw_demand_volume, material.raw_demand_weight
+                material.raw_demand_volume, material.raw_demand_weight, rules
             ),
         )
         for material in contents.materials
@@ -63,7 +66,7 @@ def _analyse_input(contents: WorkbookContents, source_name: str) -> AnalysisResu
         source_name=source_name,
         mode=MODE_INPUT,
         materials=results,
-        rules=bin_rules.RULES,
+        rules=rules,
     )
 
 

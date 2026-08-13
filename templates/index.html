@@ -68,11 +68,21 @@
     <!-- Bin rule master (Input sheet mode) -->
     <section class="card" id="rules-card" hidden>
       <div class="card-head">
-        <h2>Bin Recommendation Rules</h2>
-        <span class="muted">A category applies only when the demand volume <strong>and</strong>
-          the demand weight are both inside its range</span>
+        <div class="card-actions">
+          <button type="button" class="btn btn-primary btn-sm" data-rules-action="add">Add rule</button>
+          <div class="dropdown" id="rules-actions">
+            <button type="button" class="btn btn-sm btn-dropdown" data-menu-trigger
+                    aria-haspopup="true" aria-expanded="false">Actions <span class="caret">&#9662;</span></button>
+            <div class="dropdown-menu" hidden>
+              <button type="button" data-rules-action="toggle"><span id="rules-toggle-label">Hide bin recommendations</span></button>
+              <button type="button" data-rules-action="rerun">Re-run analysis</button>
+            </div>
+          </div>
+        </div>
       </div>
-      <div class="card-body">
+      <div class="card-body" id="rules-card-body">
+        <p class="muted rule-desc">A category applies only when the demand volume <strong>and</strong>
+          the demand weight are both inside its range.</p>
         <div class="table-scroll">
           <table class="data-table" id="rules-table">
             <thead>
@@ -83,6 +93,7 @@
                 <th class="num">Maximum Weight (Kg)</th>
                 <th class="num">Priority</th>
                 <th class="num">Products Assigned</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody id="rules-body"></tbody>
@@ -92,6 +103,9 @@
           Bounds are inclusive at both ends. Where two weight bands meet (10, 15, 25, 40 Kg)
           more than one category can qualify; the smallest suitable category wins and
           <strong>Priority</strong> breaks any remaining tie, so the result is always deterministic.
+          <br>
+          Changes are saved to <span class="mono">data/bin_rules.json</span> and applied to the
+          next analysis - use <strong>Re-run analysis</strong> to apply them to the current workbook.
         </p>
       </div>
     </section>
@@ -180,6 +194,41 @@
         </div>
       </div>
     </section>
+  </div>
+
+  <!-- Rule editor modal -->
+  <div id="rule-modal" class="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="rule-modal-title">
+      <div class="modal-head">
+        <h2 id="rule-modal-title">Add bin rule</h2>
+        <button type="button" class="chip-clear" id="rule-modal-close" aria-label="Close modal">&times;</button>
+      </div>
+      <form id="rule-form" class="rule-form" autocomplete="off">
+        <input type="hidden" id="rule-id">
+        <label>Bin Type
+          <input type="text" id="rule-name" maxlength="80" required placeholder="e.g. XL PLASTIC">
+        </label>
+        <div class="rule-grid">
+          <label>Minimum Volume (mm&sup3;)
+            <input type="number" id="rule-min-volume" step="any" min="0" required placeholder="0">
+          </label>
+          <label>Maximum Volume (mm&sup3;)
+            <input type="number" id="rule-max-volume" step="any" min="0" required placeholder="e.g. 96000000">
+          </label>
+          <label>Minimum Weight (Kg)
+            <input type="number" id="rule-min-weight" step="any" min="0" required placeholder="0">
+          </label>
+          <label>Maximum Weight (Kg)
+            <input type="number" id="rule-max-weight" step="any" min="0" required placeholder="e.g. 15">
+          </label>
+        </div>
+        <p id="rule-form-error" class="form-error" hidden></p>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-sm" id="rule-form-cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-sm">Save rule</button>
+        </div>
+      </form>
+    </div>
   </div>
 </main>
 
