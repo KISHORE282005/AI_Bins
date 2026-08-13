@@ -309,6 +309,86 @@ recommendation and reason updates accordingly.
 
 ---
 
+## Deployment
+
+`python app.py` is the development server (auto-reload, debug on) and is not for
+production. For anything real — a plant floor, another room on the LAN, a server
+— run the app under a production WSGI server. Everything ships in the same
+package; there is no database to create or migrate.
+
+### 1. Install
+
+```bash
+pip install -r requirements.txt
+```
+
+`requirements.txt` now includes `waitress`, a small production-grade WSGI server
+that works well on Windows.
+
+### 2. Run in production
+
+```bash
+waitress-serve --host=0.0.0.0 --port=5000 app:app
+```
+
+- `--host=0.0.0.0` listens on every network interface so other machines on the
+  LAN can reach it. `--host=127.0.0.1` restricts it to this machine.
+- `--port=5000` can be changed to anything free.
+- Users open `http://<server-ip>:5000` in a browser. Find the server's IP with
+  `ipconfig` (IPv4 Address).
+- If other machines cannot connect, allow inbound TCP traffic on the chosen port
+  in **Windows Defender Firewall** (Advanced Settings → Inbound Rules → New Rule
+  → Port).
+
+### 3. Start it automatically (optional)
+
+To survive reboots, run waitress as a service on Windows with NSSM:
+
+```powershell
+nssm install BinsAI "C:\path\to\pythonw.exe" "C:\path\to\venv\Scripts\waitress-serve.exe" --host=0.0.0.0 --port=5000 app:app
+nssm start BinsAI
+```
+
+or create a scheduled task that runs the same command at logon/startup.
+
+### 4. Reverse proxy and TLS (optional)
+
+For a dedicated server, put the app behind nginx/Apache and terminate HTTPS
+there, proxying to `127.0.0.1:5000`. Upload size is capped by
+`MAX_UPLOAD_MB` (25 MB); raise the proxy body size limit to match.
+
+### 5. Docker (optional)
+
+Save the following as `Dockerfile` next to `requirements.txt`:
+
+```dockerfile
+FROM python:3.12-slim
+WORKDIR /app
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+COPY . .
+EXPOSE 5000
+CMD ["waitress-serve", "--host=0.0.0.0", "--port=5000", "app:app"]
+```
+
+```bash
+docker build -t binsai .
+docker run -d --name binsai -p 5000:5000 -v binsai-data:/app/data binsai
+```
+
+The `data/` directory holds `bin_rules.json` (the editable rule store), so mount
+it as a volume to keep rule edits across container restarts.
+
+### Deployment checklist
+
+- Rule edits are saved to `data/bin_rules.json` next to the app — keep that
+  directory writable and backed up.
+- Editing a rule re-runs the analysis automatically against the last uploaded
+  workbook, so no re-upload is needed after a rule change.
+- Results are held in memory (one hour); nothing else is written to disk.
+
+---
+
 ## Notes
 
 - Results are held in memory for one hour (`DOWNLOAD_CACHE_TTL_SECONDS`) and
@@ -317,4 +397,4 @@ recommendation and reason updates accordingly.
   how many parts were routed to each bin, but does not pack multiple different
   parts into one bin or deduct consumed capacity as it goes.
 - `python app.py` starts the Flask development server. For production use a WSGI
-  server, e.g. `waitress-serve --port=5000 app:app`.
+  server (see **Deployment**), e.g. `waitress-serve --port=5000 app:app`.
