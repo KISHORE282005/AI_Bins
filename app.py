@@ -127,6 +127,28 @@ def health():
     return jsonify({"ok": True, "status": "up"})
 
 
+@app.route("/api/logo")
+def logo():
+    """Serve the company logo if configured, otherwise return 404."""
+    path = config.COMPANY_LOGO_PATH
+    if not path or not os.path.isfile(path):
+        return jsonify({"ok": False, "error": "No logo configured."}), 404
+
+    ext = os.path.splitext(path)[1].lower()
+    mime_map = {
+        ".png": "image/png",
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".gif": "image/gif",
+        ".svg": "image/svg+xml",
+        ".ico": "image/x-icon",
+        ".webp": "image/webp",
+    }
+    mimetype = mime_map.get(ext, "application/octet-stream")
+
+    return send_file(path, mimetype=mimetype)
+
+
 @app.route("/api/analyse", methods=["POST"])
 def analyse():
     uploaded = request.files.get("file")

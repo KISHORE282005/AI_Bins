@@ -5,6 +5,11 @@ spellings, matching rules) lives here so that no business rule is buried
 inside the processing code.
 """
 
+import os
+from dotenv import load_dotenv
+
+load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
+
 # --------------------------------------------------------------------------
 # Upload limits
 # --------------------------------------------------------------------------
@@ -227,3 +232,6 @@ DOWNLOAD_CACHE_TTL_SECONDS = 60 * 60
 # Folders searched (in order) for a bundled sample workbook. The first .xlsx
 # found is what the "Load sample workbook" button uses.
 SAMPLE_WORKBOOK_DIRS = ("data", "sample_data")
+
+# Company logo path (set in .env file).
+COMPANY_LOGO_PATH = os.environ.get("COMPANY_LOGO_PATH", "")
