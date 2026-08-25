@@ -799,6 +799,11 @@
     el("results").hidden = false;
     el("btn-download").disabled = false;
 
+    /* Show the in-page download bar. */
+    var dlBar = el("download-bar");
+    dlBar.hidden = false;
+    el("download-filename").textContent = data.download ? data.download.filename : "";
+
     renderFooter(data);
     renderSummaryAlert();
 
@@ -913,6 +918,10 @@
     });
 
     el("btn-download").addEventListener("click", function () {
+      if (state.download) window.location.href = "/api/download/" + state.download.token;
+    });
+
+    el("btn-download-2").addEventListener("click", function () {
       if (state.download) window.location.href = "/api/download/" + state.download.token;
     });
 

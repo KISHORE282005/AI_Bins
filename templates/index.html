@@ -65,6 +65,19 @@
     <!-- Summary metrics -->
     <section class="metrics" id="metrics"></section>
 
+    <!-- Download action -->
+    <div class="download-bar" id="download-bar" hidden>
+      <button id="btn-download-2" class="btn btn-primary" type="button">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:6px">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/>
+          <line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download Excel
+      </button>
+      <span class="muted" id="download-filename"></span>
+    </div>
+
     <!-- Bin rule master (Input sheet mode) -->
     <section class="card" id="rules-card" hidden>
       <div class="card-head">

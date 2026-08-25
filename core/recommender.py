@@ -9,6 +9,7 @@ bin against every part.
 
 from __future__ import annotations
 
+import math
 from bisect import bisect_left
 from typing import Dict, List, Optional, Tuple
 
@@ -121,7 +122,7 @@ class BinRecommendationEngine:
         if not candidates:
             return None
 
-        return min(candidates)
+        return math.floor(min(candidates))
 
     def recommend(self, part: PartRequirement) -> Recommendation:
         if not part.is_processable:

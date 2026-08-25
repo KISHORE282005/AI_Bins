@@ -334,7 +334,7 @@ def _calc_recommended_quantity(
     if not candidates:
         return None
 
-    return min(candidates)
+    return math.floor(min(candidates))
 
 
 def recommend_bin(

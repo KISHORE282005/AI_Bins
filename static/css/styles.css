@@ -449,6 +449,17 @@ body {
   margin: 10px 0;
 }
 
+.download-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0;
+  padding: 10px 14px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius);
+}
+
 .metric {
   background: var(--surface);
   border: 1px solid var(--line);
