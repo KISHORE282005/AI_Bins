@@ -51,7 +51,10 @@ def _analyse_input(contents: WorkbookContents, source_name: str) -> AnalysisResu
         MaterialRecommendation(
             material=material,
             decision=bin_rules.recommend_bin(
-                material.raw_demand_volume, material.raw_demand_weight, rules
+                material.raw_demand_volume, material.raw_demand_weight, rules,
+                rop=material.rop,
+                product_volume=material.product_volume,
+                weight_per_unit=material.weight,
             ),
         )
         for material in contents.materials

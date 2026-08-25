@@ -188,6 +188,7 @@ class Recommendation:
     orientation_used: bool = False
     suitable_bin_count: int = 0
     alternatives: List[str] = field(default_factory=list)
+    recommended_quantity: Optional[float] = None
 
     def as_dict(self) -> dict:
         p = self.part
@@ -214,6 +215,7 @@ class Recommendation:
             "orientation_used": self.orientation_used,
             "suitable_bin_count": self.suitable_bin_count,
             "alternatives": self.alternatives,
+            "recommended_quantity": self.recommended_quantity,
         }
 
 
@@ -295,6 +297,7 @@ class BinDecision:
     rule: Optional[BinRule] = None
     eligible_bins: List[str] = field(default_factory=list)
     errors: List[str] = field(default_factory=list)
+    recommended_quantity: Optional[float] = None
 
     @property
     def is_matched(self) -> bool:
@@ -311,6 +314,7 @@ class BinDecision:
             "weight_utilisation_pct": self.weight_utilisation_pct,
             "eligible_bins": list(self.eligible_bins),
             "errors": list(self.errors),
+            "recommended_quantity": self.recommended_quantity,
         }
 
 
@@ -381,6 +385,7 @@ class MaterialRecommendation:
             "weight_utilisation_pct": d.weight_utilisation_pct,
             "reason": d.reason,
             "eligible_bins": list(d.eligible_bins),
+            "recommended_quantity": d.recommended_quantity,
         }
 
 

@@ -6,10 +6,10 @@ explains each decision in plain language.
 
 Two workbook layouts are supported, and the sheets present decide which runs:
 
-| Workbook contains             | What happens                                                                                       |
-| ----------------------------- | -------------------------------------------------------------------------------------------------- |
-| an **Input** sheet            | Demand product volume and demand product weight are matched against the**bin rule master** below |
-| **Part Requirements + Master** | Demand is derived from ROP and matched against the bin list in the workbook                        |
+| Workbook contains                    | What happens                                                                                           |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------ |
+| an**Input** sheet              | Demand product volume and demand product weight are matched against the**bin rule master** below |
+| **Part Requirements + Master** | Demand is derived from ROP and matched against the bin list in the workbook                            |
 
 ---
 
@@ -30,7 +30,6 @@ Batch / headless use:
 
 ```bash
 python run_cli.py data/Input.xlsx
-python run_cli.py data/Material_Bin_Suggestion_Dummy_Data.xlsx
 python run_cli.py Input.xlsx -o results.xlsx -v
 ```
 
@@ -52,16 +51,16 @@ rows cost the same per row and nothing is hard coded to the sample data.
 
 ### Input
 
-| Column                            | Required | Notes                                        |
-| --------------------------------- | -------- | -------------------------------------------- |
-| S No / DWG No / SAP No            | no       | Carried through to the results and searchable |
-| DESC                              | no       | Shown as Description                          |
-| Qty/Mc, ROP                       | no       | Reference only; the demand columns are trusted as they stand |
-| length / breadth / height         | no       | Reference only                                |
-| Weight (Kg)                       | no       | Reference only - shown, never matched on      |
-| Product Volume (mm^3)             | no       | Reference only - shown, never matched on      |
-| **Demand product volume (mm^3)**  | **yes**  | Primary input for the recommendation          |
-| **demand product weights (Kg)**   | **yes**  | Primary input for the recommendation          |
+| Column                                 | Required      | Notes                                                        |
+| -------------------------------------- | ------------- | ------------------------------------------------------------ |
+| S No / DWG No / SAP No                 | no            | Carried through to the results and searchable                |
+| DESC                                   | no            | Shown as Description                                         |
+| Qty/Mc, ROP                            | no            | Reference only; the demand columns are trusted as they stand |
+| length / breadth / height              | no            | Reference only                                               |
+| Weight (Kg)                            | no            | Reference only - shown, never matched on                     |
+| Product Volume (mm^3)                  | no            | Reference only - shown, never matched on                     |
+| **Demand product volume (mm^3)** | **yes** | Primary input for the recommendation                         |
+| **demand product weights (Kg)**  | **yes** | Primary input for the recommendation                         |
 
 Header spelling is normalised before matching, so `demand product weights (Kg)`,
 `Demand Product Weights` and `demand  product  weights` all resolve to the same
@@ -113,13 +112,13 @@ without re-uploading. Reset by deleting `data/bin_rules.json`; it re-seeds from
 the config defaults.
 
 | Bin Type      | Maximum Volume (mm³) | Minimum Weight (Kg) | Maximum Weight (Kg) | Priority |
-| ------------- | ---------------------: | --------------------: | --------------------: | :--------: |
-| MS PLASTIC    |              3,696,000 |                     0 |                    10 |     1     |
-| S PLASTIC     |             96,000,000 |                    10 |                    15 |     2     |
-| M PLASTIC     |            264,000,000 |                    15 |                    25 |     3     |
-| L PLASTIC     |            768,000,000 |                    25 |                    40 |     4     |
-| MS BIN        |            113,400,000 |                    40 |                 1,500 |     5     |
-| MS BIN (MESH) |            364,500,000 |                    40 |                 1,500 |     6     |
+| ------------- | --------------------: | ------------------: | ------------------: | :------: |
+| MS PLASTIC    |             3,696,000 |                   0 |                  10 |    1    |
+| S PLASTIC     |            96,000,000 |                  10 |                  15 |    2    |
+| M PLASTIC     |           264,000,000 |                  15 |                  25 |    3    |
+| L PLASTIC     |           768,000,000 |                  25 |                  40 |    4    |
+| MS BIN        |           113,400,000 |                  40 |               1,500 |    5    |
+| MS BIN (MESH) |           364,500,000 |                  40 |               1,500 |    6    |
 
 **Both conditions must hold.** A category is eligible only when
 
@@ -268,18 +267,18 @@ Measured on 5,000 materials x 1,000 bins: parse 0.5s, match 0.7s, write 6.0s.
 
 All tuning lives in `config.py`:
 
-| Setting                             | Default                     | Effect                              |
-| ----------------------------------- | --------------------------- | ----------------------------------- |
-| `BIN_RULES`                       | six categories              | The bin rule master - the only place thresholds are written |
+| Setting                             | Default                     | Effect                                                        |
+| ----------------------------------- | --------------------------- | ------------------------------------------------------------- |
+| `BIN_RULES`                       | six categories              | The bin rule master - the only place thresholds are written   |
 | `PREFER_PRIORITY_OVER_SIZE`       | `False`                   | Rank eligible categories by declaration order instead of size |
-| `RULE_BOUND_TOLERANCE`            | `1e-9`                    | Slack so a demand exactly on a bound is not lost to rounding |
-| `ALLOW_ORIENTATION`               | `True`                    | Permit rotating the part to fit     |
-| `VOLUME_UTILISATION_FACTOR`       | `1.0`                     | Usable fraction of cubic capacity   |
-| `WEIGHT_UTILISATION_FACTOR`       | `1.0`                     | Usable fraction of the weight limit |
-| `AVAILABLE_STATUS_VALUES`         | `available`, `free`, … | Statuses eligible for matching      |
-| `TREAT_BLANK_STATUS_AS_AVAILABLE` | `True`                    | How to read an empty Status cell    |
-| `MAX_ALTERNATIVES`                | `3`                       | Runner-up bins recorded per part    |
-| `MAX_UPLOAD_MB`                   | `25`                      | Upload size limit                   |
+| `RULE_BOUND_TOLERANCE`            | `1e-9`                    | Slack so a demand exactly on a bound is not lost to rounding  |
+| `ALLOW_ORIENTATION`               | `True`                    | Permit rotating the part to fit                               |
+| `VOLUME_UTILISATION_FACTOR`       | `1.0`                     | Usable fraction of cubic capacity                             |
+| `WEIGHT_UTILISATION_FACTOR`       | `1.0`                     | Usable fraction of the weight limit                           |
+| `AVAILABLE_STATUS_VALUES`         | `available`, `free`, … | Statuses eligible for matching                                |
+| `TREAT_BLANK_STATUS_AS_AVAILABLE` | `True`                    | How to read an empty Status cell                              |
+| `MAX_ALTERNATIVES`                | `3`                       | Runner-up bins recorded per part                              |
+| `MAX_UPLOAD_MB`                   | `25`                      | Upload size limit                                             |
 
 To leave handling clearance, set `VOLUME_UTILISATION_FACTOR = 0.85`; every
 recommendation and reason updates accordingly.
@@ -290,12 +289,12 @@ recommendation and reason updates accordingly.
 
 ### Input sheet mode
 
-| Sheet               | Contents                                                                                     |
-| ------------------- | -------------------------------------------------------------------------------------------- |
-| Summary             | Total products, matched, no suitable bin, total demand volume and weight, products per bin type |
+| Sheet               | Contents                                                                                                                         |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Summary             | Total products, matched, no suitable bin, total demand volume and weight, products per bin type                                  |
 | Bin Recommendations | Every Input row plus Recommended Bin, Recommendation Status, Volume/Weight Utilization % and the reason - colour coded by status |
-| Bin Rule Master     | The six categories and how many products landed in each                                       |
-| Validation Issues   | Every warning and error (omitted when clean)                                                  |
+| Bin Rule Master     | The six categories and how many products landed in each                                                                          |
+| Validation Issues   | Every warning and error (omitted when clean)                                                                                     |
 
 ### Master bin mode
 

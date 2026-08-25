@@ -50,6 +50,7 @@ OUTPUT_COLUMNS = (
     "Volume Utilization %",
     "Weight Utilization %",
     "Recommendation Reason",
+    "Recommended Quantity",
 )
 
 VOLUME_UNIT = "mm³"
@@ -296,10 +297,53 @@ def _explain_no_match(volume: float, weight: float, rules: List[BinRule]) -> str
     )
 
 
+def _calc_recommended_quantity(
+    rules: List[BinRule],
+    demand_volume: Optional[float],
+    demand_weight: Optional[float],
+    rop: Optional[float],
+    product_volume: Optional[float],
+    weight_per_unit: Optional[float],
+) -> Optional[float]:
+    """Calculate recommended quantity when no suitable bin is found.
+
+    Formula:
+        rec_by_vol = max_volume_of_all_rules / demand_product_volume * ROP
+        rec_by_weight = max_weight_of_all_rules / individual_weight
+        recommended_quantity = min(rec_by_vol, rec_by_weight)
+
+    Returns None when the calculation cannot be performed (missing data or
+    zero denominators).
+    """
+    if not rules:
+        return None
+
+    max_vol = max(r.max_volume for r in rules)
+    max_wt = max(r.max_weight for r in rules)
+
+    rec_by_vol: Optional[float] = None
+    rec_by_weight: Optional[float] = None
+
+    if demand_volume and demand_volume > 0 and rop is not None and rop > 0:
+        rec_by_vol = (max_vol / demand_volume) * rop
+
+    if weight_per_unit and weight_per_unit > 0:
+        rec_by_weight = max_wt / weight_per_unit
+
+    candidates = [v for v in (rec_by_vol, rec_by_weight) if v is not None and v > 0]
+    if not candidates:
+        return None
+
+    return min(candidates)
+
+
 def recommend_bin(
     demand_volume: Any,
     demand_weight: Any,
     rules: Optional[List[BinRule]] = None,
+    rop: Optional[float] = None,
+    product_volume: Optional[float] = None,
+    weight_per_unit: Optional[float] = None,
 ) -> BinDecision:
     """Recommend a storage category for one material.
 
@@ -310,6 +354,10 @@ def recommend_bin(
     rank them -> pick the best -> compute utilisation -> write the reason.
     Returns a BinDecision whose status is "Matched", "No Suitable Bin" or
     "Invalid Data".  There is no fallback category.
+
+    When no bin matches, ``recommended_quantity`` is computed from the formula:
+        min(max_volume_of_all_rules / demand_product_volume * ROP,
+            max_weight_of_all_rules / individual_weight)
     """
     rules = get_rules() if rules is None else rules
     volume, weight, problems = validate_demand(demand_volume, demand_weight)
@@ -328,12 +376,16 @@ def recommend_bin(
     eligible = _rank([r for r in rules if r.accepts(volume, weight, tolerance)])
 
     if not eligible:
+        rec_qty = _calc_recommended_quantity(
+            rules, volume, weight, rop, product_volume, weight_per_unit
+        )
         return BinDecision(
             recommended_bin=NO_SUITABLE_BIN,
             status=STATUS_NO_SUITABLE_BIN,
             reason=_explain_no_match(volume, weight, rules),
             demand_volume=volume,
             demand_weight=weight,
+            recommended_quantity=rec_qty,
         )
 
     best = eligible[0]
@@ -350,6 +402,7 @@ def recommend_bin(
         weight_utilisation_pct=None if weight_pct is None else weight_pct * 100.0,
         rule=best,
         eligible_bins=[r.name for r in eligible],
+        recommended_quantity=float(rop) if rop is not None else None,
     )
 
 
@@ -418,9 +471,20 @@ def process_material_data(df: Any, rules: Optional[List[BinRule]] = None) -> Any
     volume_column = mapping["demand_volume"]
     weight_column = mapping["demand_weight"]
 
+    rop_column = mapping.get("rop")
+    product_volume_column = mapping.get("product_volume")
+    weight_per_unit_column = mapping.get("weight")
+
     processed: List[dict] = []
     for record in records:
-        decision = recommend_bin(record.get(volume_column), record.get(weight_column), rules)
+        decision = recommend_bin(
+            record.get(volume_column),
+            record.get(weight_column),
+            rules,
+            rop=record.get(rop_column) if rop_column else None,
+            product_volume=record.get(product_volume_column) if product_volume_column else None,
+            weight_per_unit=record.get(weight_per_unit_column) if weight_per_unit_column else None,
+        )
         row = dict(record)
         row.update({
             "Recommended Bin": decision.recommended_bin,
@@ -436,6 +500,7 @@ def process_material_data(df: Any, rules: Optional[List[BinRule]] = None) -> Any
                 else round(decision.weight_utilisation_pct, 2)
             ),
             "Recommendation Reason": decision.reason,
+            "Recommended Quantity": decision.recommended_quantity,
         })
         processed.append(row)
 

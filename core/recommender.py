@@ -87,6 +87,42 @@ class BinRecommendationEngine:
 
     # -- public API --------------------------------------------------------
 
+    def _calc_recommended_quantity(self, part: PartRequirement) -> Optional[float]:
+        """Calculate recommended quantity when no suitable bin is found.
+
+        Formula:
+            rec_by_vol = max_bin_capacity / unit_volume * ROP
+            rec_by_weight = max_bin_weight / weight_per_unit
+            recommended_quantity = min(rec_by_vol, rec_by_weight)
+
+        Returns None when the calculation cannot be performed.
+        """
+        if not self.available:
+            return None
+
+        max_capacity = max(bin_matcher.usable_capacity(b) for b in self.available)
+        weighted = [b for b in self.available if b.max_weight is not None]
+        max_wt = max((bin_matcher.usable_max_weight(b) for b in weighted), default=0.0)
+
+        rec_by_vol: Optional[float] = None
+        rec_by_weight: Optional[float] = None
+
+        unit_vol = part.unit_volume
+        rop = part.rop
+        wt = part.weight_per_unit
+
+        if unit_vol and unit_vol > 0 and rop is not None and rop > 0:
+            rec_by_vol = (max_capacity / unit_vol) * rop
+
+        if wt and wt > 0:
+            rec_by_weight = max_wt / wt
+
+        candidates = [v for v in (rec_by_vol, rec_by_weight) if v is not None and v > 0]
+        if not candidates:
+            return None
+
+        return min(candidates)
+
     def recommend(self, part: PartRequirement) -> Recommendation:
         if not part.is_processable:
             return Recommendation(
@@ -97,21 +133,25 @@ class BinRecommendationEngine:
             )
 
         if not self.available:
+            rec_qty = self._calc_recommended_quantity(part)
             return Recommendation(
                 part=part,
                 status=STATUS_UNASSIGNED,
                 bin_suggestion=NO_SUITABLE_BIN,
                 reason="No bin in the Master sheet has an 'Available' status, so nothing could be matched.",
+                recommended_quantity=rec_qty,
             )
 
         best, suitable_count, alternatives = self._find_best(part)
 
         if best is None:
+            rec_qty = self._calc_recommended_quantity(part)
             return Recommendation(
                 part=part,
                 status=STATUS_UNASSIGNED,
                 bin_suggestion=NO_SUITABLE_BIN,
                 reason=self._explain_failure(part),
+                recommended_quantity=rec_qty,
             )
 
         fit = bin_matcher.evaluate(part, best)

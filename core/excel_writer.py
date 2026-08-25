@@ -72,6 +72,7 @@ PART_HEADERS = [
     ("Weight Utilisation", 17, PERCENT_FORMAT),
     ("Orientation Applied", 18, None),
     ("Alternative Bins", 22, None),
+    ("Recommended Quantity", 20, INT_FORMAT),
 ]
 
 BIN_HEADERS = [
@@ -118,6 +119,7 @@ INPUT_HEADERS = [
     ("Volume Utilization %", 18, DECIMAL_FORMAT),
     ("Weight Utilization %", 18, DECIMAL_FORMAT),
     ("Recommendation Reason", 100, None),
+    ("Recommended Quantity", 20, INT_FORMAT),
 ]
 
 RULE_HEADERS = [
@@ -186,6 +188,7 @@ def _sheet_parts(workbook: Workbook, result: AnalysisResult) -> None:
             rec.weight_utilisation,
             "Yes" if rec.orientation_used else ("No" if rec.status == STATUS_ASSIGNED else ""),
             ", ".join(rec.alternatives),
+            rec.recommended_quantity,
         ], fill=fills.get(rec.status))
 
     worksheet.auto_filter.ref = f"A1:{get_column_letter(len(PART_HEADERS))}{len(result.recommendations) + 1}"
@@ -319,6 +322,7 @@ def _sheet_recommendations(workbook: Workbook, result: AnalysisResult) -> None:
             None if d.volume_utilisation_pct is None else round(d.volume_utilisation_pct, 2),
             None if d.weight_utilisation_pct is None else round(d.weight_utilisation_pct, 2),
             d.reason,
+            d.recommended_quantity,
         ], fill=fills.get(d.status, UNASSIGNED_FILL))
 
     worksheet.auto_filter.ref = f"A1:{get_column_letter(len(INPUT_HEADERS))}{len(result.materials) + 1}"
