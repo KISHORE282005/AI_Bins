@@ -137,7 +137,12 @@
           } },
         { label: "Suggestion Reason", cls: "reason-cell", headCls: "reason-col",
           title: function (r) { return r.reason; },
-          cell: function (r) { return '<div class="clamp">' + esc(r.reason) + "</div>"; } }
+          cell: function (r) { return '<div class="clamp">' + esc(r.reason) + "</div>"; } },
+        { label: "Recommended Quantity", sort: "recommended_quantity", cls: "num mono strong",
+          cell: function (r) {
+            if (r.recommended_quantity === null || r.recommended_quantity === undefined) return "—";
+            return num(r.recommended_quantity, 0);
+          } }
       ]
     },
 
@@ -195,7 +200,12 @@
           cell: function (r) { return utilBar(r.weight_utilisation_pct); } },
         { label: "Recommendation Reason", cls: "reason-cell", headCls: "reason-col",
           title: function (r) { return r.reason; },
-          cell: function (r) { return '<div class="clamp">' + esc(r.reason) + "</div>"; } }
+          cell: function (r) { return '<div class="clamp">' + esc(r.reason) + "</div>"; } },
+        { label: "Recommended Quantity", sort: "recommended_quantity", cls: "num mono strong",
+          cell: function (r) {
+            if (r.recommended_quantity === null || r.recommended_quantity === undefined) return "—";
+            return num(r.recommended_quantity, 0);
+          } }
       ]
     }
   };
