@@ -3,7 +3,8 @@ __pycache__/
 *.egg-info/
 .venv/
 venv/
-env/
+
+.env
 
 # Generated result workbooks
 *_Recommendations_*.xlsx

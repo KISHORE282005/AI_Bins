@@ -235,3 +235,7 @@ SAMPLE_WORKBOOK_DIRS = ("data", "sample_data")
 
 # Company logo path (set in .env file).
 COMPANY_LOGO_PATH = os.environ.get("COMPANY_LOGO_PATH", "")
+
+# Flask server settings (set in .env file).
+FLASK_HOST = os.environ.get("FLASK_HOST", "127.0.0.1")
+FLASK_PORT = int(os.environ.get("FLASK_PORT", "4004"))

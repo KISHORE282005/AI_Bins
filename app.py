@@ -295,4 +295,4 @@ def too_large(_):
 
 
 if __name__ == "__main__":
-    app.run(host="127.0.0.1", port=4004, debug=True)
+    app.run(host=config.FLASK_HOST, port=config.FLASK_PORT, debug=True)
