@@ -11,9 +11,10 @@
 <header class="app-header">
   <div class="wrap header-inner">
     <div class="brand">
-      <img id="company-logo" class="company-logo" src="/api/logo" alt="Company Logo"
-           onerror="this.style.display='none'">
-      <span class="brand-mark">BIN</span>
+      <!-- Source is the /api/logo route, which serves whatever COMPANY_LOGO_PATH
+           in .env points at.  No image path is written here on purpose. -->
+      <img id="company-logo" class="company-logo" src="/api/logo" alt="Company logo"
+           onerror="this.remove()">
       <div>
         <h1>Material Bin Recommendation System</h1>
         <p>Excel driven storage analysis &middot; demand volume &amp; demand weight based bin selection</p>

@@ -14,7 +14,7 @@ category, a utilisation figure and a sentence explaining itself.
 The rule table ships in ``config.BIN_RULES``, which seeds the persistent
 ``data/bin_rules.json`` store on first use.  ``get_rules()`` reads the store so
 edits made through the UI's rule CRUD are picked up immediately; no threshold
-is written down anywhere else.
+is written down anywhere else.+-
 
 Rules
     * Both conditions must hold.  A demand inside a category's volume band but

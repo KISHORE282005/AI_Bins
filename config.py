@@ -8,7 +8,9 @@ inside the processing code.
 import os
 from dotenv import load_dotenv
 
-load_dotenv(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env"))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+load_dotenv(os.path.join(BASE_DIR, ".env"))
 
 # --------------------------------------------------------------------------
 # Upload limits
@@ -233,8 +235,17 @@ DOWNLOAD_CACHE_TTL_SECONDS = 60 * 60
 # found is what the "Load sample workbook" button uses.
 SAMPLE_WORKBOOK_DIRS = ("data", "sample_data")
 
-# Company logo path (set in .env file).
-COMPANY_LOGO_PATH = os.environ.get("COMPANY_LOGO_PATH", "")
+# Company logo shown at the top of the page.  The path lives in .env only -
+# never hard-code it anywhere else.  A relative path is resolved against this
+# project folder so the logo is found whatever directory the server is started
+# from.  Leave the variable blank (or point it at a missing file) and the
+# header simply renders without a logo.
+_logo_path = os.environ.get("COMPANY_LOGO_PATH", "").strip().strip('"').strip("'")
+COMPANY_LOGO_PATH = (
+    os.path.join(BASE_DIR, _logo_path)
+    if _logo_path and not os.path.isabs(_logo_path)
+    else _logo_path
+)
 
 # Flask server settings (set in .env file).
 FLASK_HOST = os.environ.get("FLASK_HOST", "127.0.0.1")
